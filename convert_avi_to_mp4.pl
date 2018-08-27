@@ -97,7 +97,7 @@ sub convert {
 	my($file) = @_;
 	
 	print $file, " |+\n";
-	#system("ffmpeg.exe", "-i $file.avi", "-vcodec copy $file.mp4");
+	system("ffmpeg.exe -i $file.".$conf->get('find')->{'ext'}." -vcodec copy ".$file.$conf->get('find')->{'match_ext'});
 	#D:\videoimages\ffmpeg>ffmpeg.exe -i D:\videoimages\video\2018\08\20\3503\cam1.avi -vcodec copy  D:\videoimages\video\2018\08\20\3503\cam1.mp4
 }
 

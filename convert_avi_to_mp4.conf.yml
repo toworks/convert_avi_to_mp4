@@ -1,8 +1,8 @@
 
 find:
      directory: d:/00/
-     ext: txt
-     match_ext: .pl
+     ext: avi
+     match_ext: .mp4
 
 convert:
         directory: D:/data/projects/find_files/
