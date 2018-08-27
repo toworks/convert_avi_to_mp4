@@ -1,0 +1,14 @@
+
+find:
+     directory: d:/00/
+     ext: txt
+     match_ext: .pl
+
+convert:
+        directory: D:/data/projects/find_files/
+        app: ffmpeg
+        key: -vcodec copy 
+
+app:
+    cycle: 5
+    debug: true
