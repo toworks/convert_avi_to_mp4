@@ -18,8 +18,10 @@
  my $DEBUG = $conf->get('app')->{'debug'};
  
 
-my $dir = "d:/00/";
+my $dir = $conf->get('find')->{'directory'};
 
+#print Dumper($conf);
+print $conf->get('find')->{'ext'};
 
 find(\&wanted, $dir);
 
@@ -66,7 +68,7 @@ print "\n\n";
 print Dumper(\%_files);
 
 
-my $match = '.pl';
+my $match = $conf->get('find')->{'match_ext'};
 
 
 
@@ -84,7 +86,7 @@ foreach my $file ( sort { $a cmp $b } @files ) {
 	#print $file, " |\n" if ($ext eq 'txt' and grep { $_file.$match ne $_ } @files );
 	
 	#print $file, " |\n" if ( $ext eq 'txt' and ! grep { $_file.$match ~~ /$_/g } @files );
-	&convert($_file) if ( $ext eq 'txt' and ! grep { $_file.$match ~~ /$_/g } @files );
+	&convert($_file) if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @files );
 
 	#print $_file, " |+\n" if ( $file ne $_file.$match );
 #	print $_file.$match."\n";
