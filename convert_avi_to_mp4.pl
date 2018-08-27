@@ -20,10 +20,9 @@
 
 # while (1) {
 	my (@files, @dirs, $dir, $dir_old);
-	my $count = 0;
-	find(\&wanted, $conf->get('find')->{'directory'});
+	&find(\&wanted, $conf->get('find')->{'directory'});
 		
-	&filter(@files);
+	&filter(\@files);
 		
     print "cycle: ",$conf->get('app')->{'cycle'}, "\n" if $DEBUG;
 #    select undef, undef, undef, $conf->get('app')->{'cycle'} || 10;
@@ -32,57 +31,41 @@
 
  sub wanted {
 	$dir = $_ if -d $_;
+	$dir_old = '.' if ! defined($dir_old);
 	if ( $dir ne $dir_old ) {
 		$dir_old = $dir;
-		print $dir, " | ", $dir_old," n \n" if $DEBUG;
+		#print $dir, " | ", $dir_old," new \n" if $DEBUG;
 		-d $_ and push @dirs, $File::Find::dir;
 		-f $_ and push @files, $File::Find::name;
 	} else {
 		$dir_old = $dir;
-		print $dir, " | ", $dir_old, " o \n" if $DEBUG;
+		#print $dir, " | ", $dir_old, " old \n" if $DEBUG;
 		-d $_ and push @dirs,  $File::Find::dir;
 		-f $_ and push @files, $File::Find::name;
 	}
-	$count++;
  };
 
  sub filter {
- 	my(@files) = @_;
-	
-	print Dumper(@dirs);
-	print "\n\n";
-	print Dumper(@files);
-	print "\n\n";
+ 	my($files) = @_;
 
 	my $match = $conf->get('find')->{'match_ext'};
 
-	#=comm
-	foreach my $file ( sort { $a cmp $b } @files ) {
-	#if (my ($matched) = grep $_ =~ /$match/, @files) {
-	#	print $file, "\n";
+	foreach my $file ( sort { $a cmp $b } @{$files} ) {
 		$file =~ /^(.*)\.(.*)$/;
 		my $_file = $1;
 		my $ext = $2;
-	#	print my $ext = $2, "\n";
-	#	if ( grep $file =~ /\.txt/ and ! $_ =~ /$match/, @files) {
-	#		print $file, " |\n";
-	#	}
-		#print $file, " |\n" if ($ext eq 'txt' and grep { $_file.$match ne $_ } @files );
-		
-		#print $file, " |\n" if ( $ext eq 'txt' and ! grep { $_file.$match ~~ /$_/g } @files );
-		&convert($_file) if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @files );
 
-		#print $_file, " |+\n" if ( $file ne $_file.$match );
-	#	print $_file.$match."\n";
+		print $file, "\n" if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @{$files} and $DEBUG);
+		&convert($_file) if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @{$files} );
 	}
+ }
 
-}
-
-sub convert {
+ sub convert {
 	my($file) = @_;
-	
-	print $file, " |+\n";
-#	system("ffmpeg.exe -i $file.".$conf->get('find')->{'ext'}." -vcodec copy ".$file.$conf->get('find')->{'match_ext'});
-	#D:\videoimages\ffmpeg>ffmpeg.exe -i D:\videoimages\video\2018\08\20\3503\cam1.avi -vcodec copy  D:\videoimages\video\2018\08\20\3503\cam1.mp4
-}
+	my $execute = "ffmpeg.exe -i $file.".$conf->get('find')->{'ext'}." -vcodec copy ".$file.$conf->get('find')->{'match_ext'}." 2>nul";
+	$log->save("d", $execute) if $DEBUG;
+	system("$execute");
+ }
+
+
 
