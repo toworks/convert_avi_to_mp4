@@ -1,0 +1,3 @@
+[submodule "libs"]
+	path = libs
+	url = http://krr-app-bbgit01/perl-libs.git

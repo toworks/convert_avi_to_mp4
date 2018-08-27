@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+no warnings 'experimental::smartmatch';
 use Data::Dumper;
 use DirHandle;
 
@@ -31,14 +32,14 @@ find( sub{
 				$dold = $d;
 				print $d, " | ", $dold, " o \n";
 				-d $_ and push @dirs,  $File::Find::dir;
-				#-f $_ and push @files, $File::Find::name;
+				-f $_ and push @files, $File::Find::name;
 				#-f $_ and push @files, $File::Find::name =~ /(.*)\/(.*)$/;
-				$_files{$count}{'dir'} = $File::Find::dir if -d $_;
-				$File::Find::name =~ /(.*)\/(.*)\.(.*)$/ if -f $_;
-				$_files{$count}{'dir'} = "$1/";
-				$_files{$count}{'file'} = $2;
-				$_files{$count}{'ext'} = $3;
-				print $_files{$count}{'file'}, " | \n";
+#				$_files{$count}{'dir'} = $File::Find::dir if -d $_;
+#				$File::Find::name =~ /(.*)\/(.*)\.(.*)$/ if -f $_;
+#				$_files{$count}{'dir'} = "$1/";
+#				$_files{$count}{'file'} = $2;
+#				$_files{$count}{'ext'} = $3;
+#				print $_files{$count}{'file'}, " | \n";
 #				-f $_ and $_files{'file'} = $File::Find::name =~ /(.*)\/(.*)$/;
 #				-f $_ and $_files{'ext'} = $File::Find::name =~ /(.*)\/(.*).(.*)$/;
 			}
@@ -57,10 +58,30 @@ print "\n\n";
 print Dumper(\%_files);
 
 
-my $match = 'pl';
+my $match = '.pl';
 
+
+
+#=comm
+foreach my $file ( sort { $a cmp $b } @files ) {
 #if (my ($matched) = grep $_ =~ /$match/, @files) {
+#	print $file, "\n";
+	$file =~ /^(.*)\.(.*)$/;
+	my $_file = $1;
+	my $ext = $2;
+#	print my $ext = $2, "\n";
+#	if ( grep $file =~ /\.txt/ and ! $_ =~ /$match/, @files) {
+#		print $file, " |\n";
+#	}
+	#print $file, " |\n" if ($ext eq 'txt' and grep { $_file.$match ne $_ } @files );
+	
+	print $file, " |\n" if ( $ext eq 'txt' and ! grep { $_file.$match ~~ /$_/g } @files );
 
+	#print $_file, " |+\n" if ( $file ne $_file.$match );
+#	print $_file.$match."\n";
+}
+#=cut
+=comm
 foreach my $num ( sort { $a cmp $b } keys %_files ) {
 #	print $_files{$num}{'dir'}, "\n";
 	if (	$_files{$num}{'dir'}.$_files{$num}{'file'}.'.'.$_files{$num}{'ext'} ne $match and
@@ -81,7 +102,7 @@ foreach my $num ( sort { $a cmp $b } keys %_files ) {
 		print $_files{$num}{'dir'}, $_files{$num}{'file'}, ".", $_files{$num}{'ext'}, " - files \n";
 	}
 }
-
+=cut
 exit;
 
 
