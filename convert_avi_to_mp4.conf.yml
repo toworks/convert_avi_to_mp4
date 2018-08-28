@@ -7,7 +7,7 @@ find:
 convert:
         directory: D:/data/projects/find_files/
         app: ffmpeg
-        key: -vcodec copy 
+        keys: -y -vcodec copy 
 
 app:
     cycle: 5
