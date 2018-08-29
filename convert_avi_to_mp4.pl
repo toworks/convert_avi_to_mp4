@@ -9,17 +9,25 @@
  use File::Find;
  use threads;
  use Thread::Queue;
+ #use Fcntl qw(:flock SEEK_END);
+ use Fcntl qw(:flock);
  use Data::Dumper;
 
 
  $| = 1;  # make unbuffered
 
+
  my $task_count: shared;
  $task_count = 0;
 
  my $log = LOG->new();
- my $conf = configuration->new($log);
 
+ # test running programm
+ #locked($log->get_name().".conf.yml");
+ locked($0);
+ 
+ my $conf = configuration->new($log);
+ 
  my $DEBUG = $conf->get('app')->{'debug'};
 
  my $queue = Thread::Queue->new();
@@ -29,7 +37,9 @@
 	push @threads, threads->create( \&worker, $_ );
  }
 
- 
+    #foreach my $thread ( threads->list() ) {
+	#$thread->join();
+    #}
  my (@files, @dirs, $dir, $dir_old);
  $log->save("i", "start ". $log->get_name());
  &find(\&wanted, $conf->get('find')->{'directory'});
@@ -104,5 +114,19 @@
 		print "-----------------\n" if $DEBUG;
 		print "task_count--: ", $task_count--, "\n" if $DEBUG;
 	}
+ }
+
+ sub locked {
+	my($file) = @_;
+
+	open our $fh, '<', $file || die "$!";
+
+	if ( ! flock($fh, LOCK_EX|LOCK_NB) ) {
+		print "file lock\n" if $DEBUG;
+		$log->save("i", "file is lock: $file");
+		close $fh;
+		exit;
+	}
+	$log->save("i", "file locking: $file");
  }
 
