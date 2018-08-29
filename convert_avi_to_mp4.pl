@@ -8,28 +8,50 @@
  use configuration;
  use File::Find;
  use threads;
+ use Thread::Queue;
  use Data::Dumper;
 
- 
+
  $| = 1;  # make unbuffered
+
+ my $task_count: shared;
+ $task_count = 0;
 
  my $log = LOG->new();
  my $conf = configuration->new($log);
 
  my $DEBUG = $conf->get('app')->{'debug'};
 
+ my $queue = Thread::Queue->new();
 
-# while (1) {
-	my (@files, @dirs, $dir, $dir_old);
-	$log->save("i", "start ". $log->get_name());
-	&find(\&wanted, $conf->get('find')->{'directory'});
+ my @threads;
+ for ( 1..$conf->get('app')->{'tasks'} ) {
+	push @threads, threads->create( \&worker, $_ );
+ }
+
+ 
+ my (@files, @dirs, $dir, $dir_old);
+ $log->save("i", "start ". $log->get_name());
+ &find(\&wanted, $conf->get('find')->{'directory'});
 		
-	my $files = &filter(\@files);
+ my $_files = &filter(\@files);
 
-    print "cycle: ",$conf->get('app')->{'cycle'}, "\n" if $DEBUG;
-	$log->save("i", "stop ". $log->get_name());
-#    select undef, undef, undef, $conf->get('app')->{'cycle'} || 10;
-# }
+ PAUSE: foreach my $file ( @{$_files} ) {
+	if ( $task_count eq $conf->get('app')->{'tasks'} ) {
+		select undef, undef, undef, $conf->get('app')->{'cycle'} || 10;
+		redo PAUSE;
+	}		
+	$queue->enqueue( $file );
+ }
+
+ print "cycle: ",$conf->get('app')->{'cycle'}, "\n" if $DEBUG;
+ $log->save("i", "stop ". $log->get_name());
+
+ $queue->end();
+
+ foreach my $thread ( threads->list() ) {
+	$thread->join();
+ }
 
 
  sub wanted {
@@ -52,7 +74,6 @@
  	my($files) = @_;
 
 	my @files;
-
 	my $match = $conf->get('find')->{'match_ext'};
 
 	foreach my $file ( sort { $a cmp $b } @{$files} ) {
@@ -60,35 +81,28 @@
 		my $_file = $1;
 		my $ext = $2;
 
-#		print $file, "\n" if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @{$files} and $DEBUG);
+		#print $file, "\n" if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @{$files} and $DEBUG);
 #		&convert($_file) if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @{$files} );
+		
+		#insert tasks into thread queue.
+		#$process_q->enqueue( $_file ) if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @{$files} );
 		push @files, $_file if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @{$files} );
 	}
 	return \@files;
  }
 
- sub convert {
-	my($file) = @_;
-	my $execute = 	$conf->get('convert')->{'app'}.
-					" -i $file.".$conf->get('find')->{'ext'}.
-					" ".$conf->get('convert')->{'keys'}." ".
-					$file.$conf->get('find')->{'match_ext'}." 2>nul";
-	$log->save("d", $execute) if $DEBUG;
-	system("$execute");
+ sub worker {
+	while ( my $file = $queue -> dequeue() ) {
+		print "task_count++: ", $task_count++, "\n" if $DEBUG;
+		print threads->self()->tid(). ": pinging $file\n" if $DEBUG;
+		my $execute = 	$conf->get('convert')->{'app'}.
+						" -i $file.".$conf->get('find')->{'ext'}.
+						" ".$conf->get('convert')->{'keys'}." ".
+						$file.$conf->get('find')->{'match_ext'}." 2>nul";
+		$log->save("d", $execute) if $DEBUG;
+		system("$execute");
+		print "-----------------\n" if $DEBUG;
+		print "task_count--: ", $task_count--, "\n" if $DEBUG;
+	}
  }
-
-
-
-
-sub gettid
-{
-    syscall 224;
-}
-
-sub diag
-{
-    #print "pid=$$ tid=@{[threads->tid]} gettid=@{[gettid]}\n";
-	print "pid=$$ tid=@{[threads->tid]}\n";
-}
-
 
