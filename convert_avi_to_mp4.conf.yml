@@ -1,14 +1,16 @@
 
 find:
-     directory: d:/00/
+     directory: D:/videoimages/video/
+     #directory: D:/videoimages/video/2018/08/20/
      ext: avi
      match_ext: .mp4
 
 convert:
-        directory: D:/data/projects/find_files/
+        directory: C:/bin/daemon/
         app: ffmpeg
-        keys: -y -vcodec copy 
+        keys: -vcodec copy 
 
 app:
-    cycle: 5
+    tasks: 10
+    cycle: 1
     debug: true
