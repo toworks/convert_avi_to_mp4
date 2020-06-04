@@ -1,6 +1,6 @@
 
 find:
-     directory: D:/videoimages/video/
+     directory: D:/videoimages/
      #directory: D:/videoimages/video/2018/08/11/
      ext: avi
      match_ext: .mp4
