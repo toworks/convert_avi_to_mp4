@@ -110,14 +110,14 @@
 						" ".$conf->get('convert')->{'keys'}." ".
 						$file.$conf->get('find')->{'match_ext'}." 2>nul";
 		$log->save("d", $execute) if $DEBUG;
-		eval {
-		    system("$execute") || die "$!";
+
+		my $return = system("$execute");
+		if ($return != 0) {
+			$log->save('e', "$!");
+		} else {
 		    unlink $file.".".$conf->get('find')->{'ext'};
 		    $log->save('d', "remove file: ".$file.".".$conf->get('find')->{'ext'}) if $DEBUG;
 		};
-		if ($@) {
-		    $log->save('e', "$@");
-		}
 		print "-----------------\n" if $DEBUG;
 		print "task_count--: ", $task_count--, "\n" if $DEBUG;
 	}
