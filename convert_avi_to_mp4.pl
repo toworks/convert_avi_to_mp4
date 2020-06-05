@@ -96,6 +96,7 @@
 		
 		#insert tasks into thread queue.
 		#$process_q->enqueue( $_file ) if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @{$files} );
+		$log->save('d', "added file for processing: ".$_file.".".$conf->get('find')->{'ext'}) if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @{$files} and $DEBUG );
 		push @files, $_file if ( $ext eq $conf->get('find')->{'ext'} and ! grep { $_file.$match ~~ /$_/g } @{$files} );
 	}
 	return \@files;
@@ -114,6 +115,8 @@
 		my $return = system("$execute");
 		if ($return != 0) {
 			$log->save('e', "$!");
+			unlink $file.$conf->get('find')->{'match_ext'};
+			$log->save('d', "remove file: ".$file.$conf->get('find')->{'match_ext'});
 		} else {
 		    unlink $file.".".$conf->get('find')->{'ext'};
 		    $log->save('d', "remove file: ".$file.".".$conf->get('find')->{'ext'}) if $DEBUG;
